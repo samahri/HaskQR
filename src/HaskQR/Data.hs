@@ -7,7 +7,8 @@ module HaskQR.Data(
     Codeword,
     getVersionNumber, 
     mkVersion,
-    alphaNumEncodingMap 
+    alphaNumEncodingMap,
+    dataCodewordsMap 
 ) where
 
 import Data.Bit
@@ -32,6 +33,12 @@ mkVersion :: Int -> Maybe Version
 mkVersion v
     | v >= 1 && v <= 40 = Just $ Version v
     | otherwise = Nothing
+
+-- from table 1
+dataCodewordsMap :: Map.Map Version Int
+dataCodewordsMap = Map.fromAscList [
+    (Version 1 , 19) -- That's for errer correction Level L
+    ]
 
 alphaNumEncodingMap :: Map.Map Char Int
 alphaNumEncodingMap = Map.fromList [

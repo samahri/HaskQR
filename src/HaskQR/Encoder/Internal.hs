@@ -34,11 +34,14 @@ getDataBitStream input mode version = segment <> terminator
         segment = getSegmentBits input mode version
 
         terminator :: Vector Bit
-        terminator = V.replicate times 0
+        terminator = let times = min (capacity - segmentLength) 4 in V.replicate times 0
             where
-                times = min (capacity - segmentLength) 4
-                capacity = 8 * numOfDataCodewords version
                 segmentLength = V.length segment
+                capacity = 8 * numOfDataCodewords
+                  where
+                    numOfDataCodewords = dataCodewordsMap Map.! version
+                
+
 
 getSegmentBits :: Input -> Mode -> Version -> Vector Bit
 getSegmentBits input mode version = modeIndicator <> charCountIndicator <> encodedInputData 
@@ -120,9 +123,3 @@ charCountIndicatorLength mode version = 10 + versionAdditive - modeSubtractive
 getNBitVector :: Int -> Word32 -> Vector Bit
 getNBitVector n = V.drop (32 - n) . V.reverse . cloneFromByteString . BS.toStrict . runPut . putWord32le
 
--- from table 1
-numOfDataCodewords :: Version -> Int
-numOfDataCodewords version = case v of
-    1 -> 19 -- That's for errer correction Level L
-    where
-        v = getVersionNumber version
