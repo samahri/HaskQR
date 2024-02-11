@@ -23,16 +23,11 @@ source-repository head
   type: git
   location: https://github.com/githubuser/HaskQR
 
-library haskQR-internal
-  exposed-modules:
-      HaskQR.Display
-      , HaskQR.Encoder
-      , HaskQR.Encoder.Internal
-      , HaskQR.Data
-      , HaskQR.ErrorCorrection
+executable haskqr
+  main-is: Main.hs
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , sdl2
@@ -42,16 +37,12 @@ library haskQR-internal
     , vector
     , split
     , vector-split
-  default-language: Haskell2010
-
-executable haskQR-exe
-  main-is: Main.hs
-  hs-source-dirs:
-      app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base >=4.7 && <5
-    , haskQR-internal
+  other-modules:
+    HaskQR.Display
+    , HaskQR.Encoder
+    , HaskQR.Encoder.Internal
+    , HaskQR.Data
+    , HaskQR.ErrorCorrection
   default-language: Haskell2010
 
 test-suite haskQR-test
