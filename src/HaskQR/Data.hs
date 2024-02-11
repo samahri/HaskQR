@@ -18,7 +18,7 @@ data QRCode = QRCode {
     , getVersion :: Version
 } deriving Show
 
-data Mode = NumericMode deriving Show
+data Mode = NumericMode | AlphaNumMode deriving Show
 data ErrorCorrectionLevel = L deriving Show
 
 newtype Version = Version { getVersionNumber :: Int } deriving (Show, Eq, Ord)
