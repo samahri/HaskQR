@@ -37,6 +37,7 @@ executable haskqr
     , vector
     , split
     , vector-split
+    , containers
   other-modules:
     HaskQR.Display
     , HaskQR.Encoder

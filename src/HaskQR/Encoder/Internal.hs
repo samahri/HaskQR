@@ -7,9 +7,11 @@ import Data.Vector.Split as VS
 
 import Data.Bit as Bit
 import Data.Vector.Unboxed as V
+import qualified Data.Map.Strict as Map
 
 import Data.Binary.Put
 import Data.Word
+import Data.Char (toUpper)
 
 import HaskQR.Data
 
@@ -84,21 +86,9 @@ encodeAlphaNumMode = V.concat . convertToBitValue . convertToCharacterValue
           where
             -- todo: don't use case statement
             toCharValue :: Char -> Int
-            toCharValue c = case c of
-                '0' -> 0
-                '1' -> 1
-                '2' -> 2
-                '3' -> 3
-                '4' -> 4
-                '5' -> 5
-                '6' -> 6
-                '7' -> 7
-                '8' -> 8
-                '9' -> 9
-                'A' -> 10
-                'B' -> 11
-                'C' -> 12
-                '-' -> 41
+            toCharValue c = case Map.lookup (toUpper c) alphaNumEncodingMap of
+                Just val -> val
+                Nothing -> error "Unsupported Character"
 
         convertToBitValue :: [Int] -> [Vector Bit]
         convertToBitValue charValList = convertChunkToBits <$> LS.chunksOf 2 charValList
