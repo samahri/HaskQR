@@ -39,25 +39,28 @@ getDataBitStream input mode version = segment <> terminator
                 segmentLength = V.length segment
 
 getSegmentBits :: Input -> Mode -> Version -> Vector Bit
-getSegmentBits input mode version = getModeIndicator mode <> getCharCountIndicator input version <> encodeInputData input mode
+getSegmentBits input mode version = modeIndicator <> charCountIndicator <> encodedInputData 
     where
-        -- first four bits in the data segment
-        getModeIndicator :: Mode -> Vector Bit 
-        getModeIndicator mode = getNBitVector 4 modeVal
+        -- first four bits in the data segment - Table 2
+        modeIndicator :: Vector Bit 
+        modeIndicator = getNBitVector 4 modeVal
             where
                 modeVal = case mode of
-                    NumericMode -> 0b0001
+                    NumericMode  -> 0b0001
+                    AlphaNumMode -> 0b0010
+
         -- character count indicator; length depends on Version number
-        getCharCountIndicator :: Input -> Version -> Vector Bit
-        getCharCountIndicator input version = let
+        charCountIndicator :: Vector Bit
+        charCountIndicator = let
             ln = fromIntegral $ Prelude.length input
-            cciLength = charCountIndicatorLength version
+            cciLength = charCountIndicatorLength mode version 
             in 
                 getNBitVector cciLength ln
 
-        encodeInputData :: Input -> Mode -> Vector Bit
-        encodeInputData input mode = case mode of
-            NumericMode -> encodeNumericMode input 
+        encodedInputData :: Vector Bit
+        encodedInputData = case mode of
+            NumericMode  -> encodeNumericMode input 
+            AlphaNumMode -> encodeAlphaNumMode input
 
 encodeNumericMode :: Input -> Vector Bit
 encodeNumericMode input = let
@@ -73,13 +76,55 @@ encodeNumericMode input = let
         -- convert each number string to a 4/7/10 bit binary number (see section 7.4.3)
         V.concat $ fmap (\el -> getNBitVector (elementLength el) (convertStrToWord32 el)) chunkedInput
 
-charCountIndicatorLength :: Version -> Int
-charCountIndicatorLength version 
-    | v >= 1  && v <= 9 = 10
-    | v >= 10 && v <= 26 = 12
-    | v >= 27 && v <= 40 = 14
+encodeAlphaNumMode :: Input -> Vector Bit
+encodeAlphaNumMode = V.concat . convertToBitValue . convertToCharacterValue
     where
+        convertToCharacterValue :: Input -> [Int]
+        convertToCharacterValue = fmap toCharValue
+          where
+            -- todo: don't use case statement
+            toCharValue :: Char -> Int
+            toCharValue c = case c of
+                '0' -> 0
+                '1' -> 1
+                '2' -> 2
+                '3' -> 3
+                '4' -> 4
+                '5' -> 5
+                '6' -> 6
+                '7' -> 7
+                '8' -> 8
+                '9' -> 9
+                'A' -> 10
+                'B' -> 11
+                'C' -> 12
+                '-' -> 41
+
+        convertToBitValue :: [Int] -> [Vector Bit]
+        convertToBitValue charValList = convertChunkToBits <$> LS.chunksOf 2 charValList
+          where
+            convertChunkToBits :: [Int] -> Vector Bit
+            convertChunkToBits [dv1, dv2] = getNBitVector 11 $ convertToDecimal (dv1, dv2)
+            convertChunkToBits [dv] = getNBitVector 6 $ convertToDecimal (0, dv)
+            
+            convertToDecimal :: (Int, Int) -> Word32
+            convertToDecimal (v1,v2) = fromIntegral $ v1 * 45 + v2
+
+charCountIndicatorLength :: Mode -> Version -> Int
+charCountIndicatorLength mode version = 10 + versionAdditive - modeSubtractive
+  where 
+    versionAdditive :: Int
+    versionAdditive
+      | v >= 1  && v <= 9 = 0
+      | v >= 10 && v <= 26 = 2
+      | v >= 27 && v <= 40 = 4
+      where
         v = getVersionNumber version
+
+    modeSubtractive :: Int
+    modeSubtractive = case mode of
+        NumericMode  -> 0
+        AlphaNumMode -> 1
 
 -- utility function to convert a number (in word32) into a varied length binary vector
 getNBitVector :: Int -> Word32 -> Vector Bit
